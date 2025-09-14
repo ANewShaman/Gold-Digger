@@ -15,7 +15,7 @@ Algorithm Visualization</u>: Watch as popular pathfinding algorithms like A*, Di
 ## Live Demo
 View the live application here: **https://anewshaman.github.io/Gold-Digger/**
 
-##Technologies Used
+## Technologies Used
 This project was built using a minimal web stack for simplicity and performance:
 
 <u>*HTML</u>: For the core structure of the web application.
