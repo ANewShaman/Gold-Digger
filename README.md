@@ -14,7 +14,6 @@ Algorithm Visualization: Watch as popular pathfinding algorithms like A*, Dijkst
 
 ## Live Demo
 View the live application here: **https://anewshaman.github.io/Gold-Digger/**
-![Uploading image.png…]()
 
 
 ## Technologies Used
