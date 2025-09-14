@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gold Digger</title>
+    <link rel="icon" href="Gold_Digger_logo.png" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Importing a retro-style font for a gamified look */
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+        body {
+    font-family: 'VT323', monospace;
+    background-color: #3e2723;
+    color: #f5e3b5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 1cap;
+    box-sizing: border-box;
+    
+    /* Background Image */
+    background-image: url('Mining_wallpaper.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            align-items: center;
+            max-width: 1200px;
+            width: 100%;
+        }
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 900px;
+            background-color: rgba(93, 64, 55, 0.65); /* 65% transparent */
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+        }
+        .btn, .select-btn {
+            padding: 10px 18px;
+            border-radius: 9999px;
+            font-weight: bold;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid transparent;
+        }
+        .btn-primary {
+            background-color: #c29b4e;
+            color: #3e2723;
+        }
+        .btn-primary:hover {
+            background-color: #a8843e;
+        }
+        .btn-secondary {
+            background-color: #8d6e63;
+            color: #f5e3b5;
+        }
+        .btn-secondary:hover {
+            background-color: #7a5d52;
+        }
+        .btn-mode {
+            background-color: #795548;
+            color: #fff;
+        }
+        .btn-mode.active {
+            background-color: #6d4c41;
+        }
+        .btn-mode:hover:not(.active) {
+            background-color: #8d6e63;
+        }
+        .select-btn {
+            background-color: #8d6e63;
+            color: #f5e3b5;
+            border: 1px solid #795548;
+        }
+        #pathfinding-canvas {
+            border: 2px solid #795548;
+            border-radius: 8px;
+            background-color: #5d4037;
+            touch-action: none;
+            /* Ensure canvas has a minimum size to be visible */
+            min-height: 200px;
+        }
+        .info-panel {
+            background-color: #4e342e;
+            border-radius: 8px;
+            padding: 16px;
+            width: 100%;
+            max-width: 900px;
+        }
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 16px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .modal.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: rgba(0, 0, 0, 0.5); /* Transparent black background */
+            backdrop-filter: blur(5px);
+            padding: 24px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 600px;
+            color: #ffeb3b; /* Gold text color */
+            font-size: 1.5rem; /* Base font size for modal content */
+        }
+        .modal-content h3 {
+            margin-bottom: 16px;
+            font-size: 2rem; /* Larger font for the title */
+            font-weight: bold;
+        }
+        .modal-content p {
+            margin-bottom: 24px;
+            font-size: 1.25rem; /* Larger font for paragraphs */
+        }
+        
+        /* New styles for the left-hand panel and overall layout */
+        .game-layout {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            width: 100%;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background-color: #5d4037;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-width: 200px;
+        }
+
+        .left-panel .btn-mode {
+            width: 100%; /* Make buttons full width */
+            margin: 0;
+        }
+
+        .canvas-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+            width: 100%;
+            /* Make the container grow to fill available space */
+            flex-grow: 1;
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 768px) {
+            .game-layout {
+                flex-direction: column;
+                align-items: center;
+            }
+            .left-panel {
+                min-width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .left-panel .btn-mode {
+                width: auto;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <div class="app-container">
+        <div class="game-area">
+            <h1 class="text-7xl font-bold text-center mb-4">Gold Digger</h1>
+            <div class="controls">
+                <select id="algorithm-select" class="select-btn">
+                    <option value="A*">A*</option>
+                    <option value="Dijkstra">Dijkstra's</option>
+                    <option value="GreedyBestFirst">Greedy Best-First</option>
+                    <option value="BFS">BFS</option>
+                    <option value="DFS">DFS</option>
+                    <option value="HillClimbing">Hill Climbing</option>
+                </select>
+                 <select id="grid-size-select" class="select-btn">
+                    <option value="20">20x20</option>
+                    <option value="40" selected>40x40</option>
+                    <option value="60">60x60</option>
+                </select>
+                <select id="map-select" class="select-btn">
+                    <option value="custom">Custom Map</option>
+                    <option value="prospectors_peak">Prospector's Peak</option>
+                    <option value="north_star">The North Star Prospect</option>
+                    <option value="whispering_canyon">Whispering Canyon Mine</option>
+                    <option value="midas_touch">Midas's Touch</option>
+                    <option value="echoing_gulch">Echoing Gulch</option>
+                </select>
+                <button id="start-btn" class="btn btn-primary">Begin Expedition!</button>
+                <button id="restart-btn" class="btn btn-secondary">Restart</button>
+                <button id="clear-btn" class="btn btn-secondary">Clear Grid</button>
+                <button id="pause-btn" class="btn btn-secondary" disabled>Pause</button>
+            </div>
+            <div class="game-layout">
+                <!-- Left-hand panel for Miner's Kit -->
+                <div class="left-panel">
+                    <h3 class="text-2xl font-bold text-center mb-2">Miner's Kit</h3>
+                    <button id="mode-start" class="btn btn-mode active" data-mode="start">Place Miner</button>
+                    <button id="mode-end" class="btn btn-mode" data-mode="end">Place Gold</button>
+                    <button id="mode-wall" class="btn btn-mode" data-mode="wall">Place Walls</button>
+                    <button id="mode-resource" class="btn btn-mode" data-mode="resource">Place Resources</button>
+                    <button id="mode-mud" class="btn btn-mode" data-mode="mud">Place Treacherous Mud</button>
+                    <button id="mode-stream" class="btn btn-mode" data-mode="stream">Place Stream</button>
+                    <button id="mode-oneway" class="btn btn-mode" data-mode="oneway">One-Way Path</button>
+                </div>
+                <!-- Right-hand side for canvas and info -->
+                <div class="canvas-container">
+                    <canvas id="pathfinding-canvas" class="w-full"></canvas>
+                    <div id="info-panel" class="info-panel">
+                        <p>Status: Ready to place nodes.</p>
+                        <div class="legend">
+                            <div class="legend-item"><span style="font-size: 1.5rem;">⛏️</span>Miner</div>
+                            <div class="legend-item"><span style="font-size: 1.5rem;">💰</span>Gold</div>
+                            <div class="legend-item"><div class="legend-color" style="background-color:#2e2e2e;"></div>Wall</div>
+                            <div class="legend-item"><div class="legend-color" style="background-color:#e91e63;"></div>Resource (Cost: 1)</div>
+                            <div class="legend-item"><div class="legend-color" style="background-color:#7c4d2d;"></div>Mud (Cost: 50)</div>
+                            <div class="legend-item"><div class="legend-color" style="background-color:#42a5f5;"></div>Stream (Cost: 10)</div>
+                            <div class="legend-item"><div class="legend-color" style="background-color:#FFD700; width: 30px; border-radius: 0;"></div>One-Way Path</div>
+                            <div class="legend-item"><div class="legend-color" style="background-color: transparent; border-radius: 4px; border: 1px solid #c29b4e; background-image: linear-gradient(to right, #a8843e, #f2c75a);"></div>Visited</div>
+                            <div class="legend-item"><div class="legend-color" style="background-color:#d2b48c;"></div>Path</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h3 id="modal-title"></h3>
+            <p id="modal-message"></p>
+            <button id="modal-ok-btn" class="btn btn-primary">OK</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('pathfinding-canvas');
+            const ctx = canvas.getContext('2d');
+            const algorithmSelect = document.getElementById('algorithm-select');
+            const gridSizeSelect = document.getElementById('grid-size-select');
+            const mapSelect = document.getElementById('map-select');
+            const startBtn = document.getElementById('start-btn');
+            const restartBtn = document.getElementById('restart-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const pauseBtn = document.getElementById('pause-btn');
+            const infoPanel = document.getElementById('info-panel');
+            const modeButtons = document.querySelectorAll('.btn-mode');
+            const modal = document.getElementById('modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalMessage = document.getElementById('modal-message');
+            const modalOkBtn = document.getElementById('modal-ok-btn');
+
+            let GRID_SIZE = parseInt(gridSizeSelect.value);
+            let CELL_SIZE;
+
+            const updateCanvasSize = () => {
+                const canvasContainer = document.querySelector('.canvas-container');
+                const canvasSize = Math.min(canvasContainer.offsetWidth, window.innerHeight * 0.6, 800);
+                canvas.width = canvasSize;
+                canvas.height = canvasSize;
+                CELL_SIZE = canvas.width / GRID_SIZE;
+            };
+
+            const ANIMATION_SPEED = 50; // Milliseconds for search animation
+            const PLAYER_ANIMATION_SPEED = 300; // Slower speed for player movement
+
+            let grid = [];
+            let startNode = null;
+            let endNode = null;
+            let isAnimating = false;
+            let isPaused = false;
+            let currentMode = 'start';
+            let isDrawingWall = false;
+            let oneWayStartNode = null;
+            let oneWayPaths = [];
+
+            const colors = {
+                empty: '#5d4037',
+                wall: '#2e2e2e',
+                start: '#4caf50',
+                end: '#ffeb3b',
+                resource: '#e91e63',
+                mud: '#7c4d2d',
+                stream: '#42a5f5', 
+                path: '#d2b48c',
+                visited: '#a8843e'
+            };
+            
+            // Helper function to interpolate between two hex colors
+            const interpolateColor = (color1, color2, factor) => {
+                const hexToRgb = hex => hex.match(/\w\w/g).map(x => parseInt(x, 16));
+                const rgbToHex = ([r, g, b]) => '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+                const c1 = hexToRgb(color1);
+                const c2 = hexToRgb(color2);
+                const result = c1.map((c, i) => Math.round(c + (c2[i] - c) * factor));
+                return rgbToHex(result);
+            };
+
+            // Heuristic function (Manhattan distance)
+            const heuristic = (nodeA, nodeB) => {
+                return Math.abs(nodeA.x - nodeB.x) + Math.abs(nodeA.y - nodeB.y);
+            };
+
+            const showModal = (title, message) => {
+                modalTitle.textContent = title;
+                modalMessage.innerHTML = message; // Use innerHTML to allow for line breaks
+                modal.classList.add('visible');
+            };
+
+            const hideModal = () => {
+                modal.classList.remove('visible');
+            };
+
+            modalOkBtn.addEventListener('click', hideModal);
+
+            class Node {
+                constructor(x, y, type = 'empty') {
+                    this.x = x;
+                    this.y = y;
+                    this.type = type;
+                    this.weight = this.getWeight();
+                    this.f = Infinity; // A* total cost
+                    this.g = Infinity; // A* cost from start
+                    this.h = 0;        // A* heuristic cost
+                    this.previous = null;
+                    this.visited = false;
+                }
+                
+                getWeight() {
+                    switch (this.type) {
+                        case 'resource':
+                            return 1;
+                        case 'mud':
+                            return 50;
+                        case 'stream':
+                            return 10;
+                        default:
+                            return 5;
+                    }
+                }
+            }
+
+            const initializeGrid = () => {
+                grid = [];
+                startNode = null;
+                endNode = null;
+                isAnimating = false;
+                isPaused = false;
+                oneWayPaths = [];
+                oneWayStartNode = null;
+                updateCanvasSize();
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    grid[y] = [];
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        grid[y][x] = new Node(x, y);
+                    }
+                }
+                drawGrid();
+                updateStatus('Ready to place nodes.');
+                pauseBtn.textContent = 'Pause';
+                pauseBtn.disabled = true;
+                startBtn.disabled = false;
+                restartBtn.disabled = false;
+                clearBtn.disabled = false;
+            };
+
+            const resetPathfindingState = () => {
+                isAnimating = false;
+                isPaused = false;
+                pauseBtn.textContent = 'Pause';
+                
+                getAllNodes().forEach(node => {
+                    node.f = Infinity;
+                    node.g = Infinity;
+                    node.h = 0;
+                    node.previous = null;
+                    node.visited = false;
+                    if (node.type === 'visited' || node.type === 'path') {
+                        node.type = 'empty';
+                    }
+                });
+                drawGrid();
+            };
+
+            const drawGrid = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                // Dynamically adjust line thickness based on grid size
+                ctx.lineWidth = Math.max(1, 40 / GRID_SIZE); 
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        drawNode(grid[y][x]);
+                    }
+                }
+                drawOneWayArrows();
+            };
+
+            const drawNode = (node, color = null) => {
+                const nodeColor = color || colors[node.type];
+                ctx.fillStyle = nodeColor;
+                ctx.fillRect(node.x * CELL_SIZE, node.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                ctx.strokeStyle = '#3e2723';
+                ctx.strokeRect(node.x * CELL_SIZE, node.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                
+                // Draw icons for start and end nodes
+                if (node.type === 'start') {
+                    drawMiner(node.x, node.y, '#f5e3b5');
+                } else if (node.type === 'end') {
+                    drawGold(node.x, node.y, '#f5e3b5');
+                }
+            };
+            
+            const drawMiner = (x, y, color) => {
+                ctx.fillStyle = color;
+                const iconSize = CELL_SIZE * 0.7;
+                const ox = x * CELL_SIZE + (CELL_SIZE - iconSize) / 2;
+                const oy = y * CELL_SIZE + (CELL_SIZE - iconSize) / 2;
+                ctx.font = `${iconSize}px serif`;
+                ctx.textBaseline = 'middle';
+                ctx.textAlign = 'center';
+                ctx.fillText('⛏️', ox + iconSize / 2, oy + iconSize / 2); // Using emoji as a quick icon
+            };
+            
+            const drawGold = (x, y, color) => {
+                ctx.fillStyle = color;
+                const iconSize = CELL_SIZE * 0.7;
+                const ox = x * CELL_SIZE + (CELL_SIZE - iconSize) / 2;
+                const oy = y * CELL_SIZE + (CELL_SIZE - iconSize) / 2;
+                ctx.font = `${iconSize}px serif`;
+                ctx.textBaseline = 'middle';
+                ctx.textAlign = 'center';
+                ctx.fillText('💰', ox + iconSize / 2, oy + iconSize / 2); // Using emoji as a quick icon
+            };
+
+            const drawOneWayArrows = () => {
+                ctx.strokeStyle = '#FFD700'; // Gold color for arrows
+                ctx.lineWidth = 2;
+                ctx.fillStyle = '#FFD700';
+
+                oneWayPaths.forEach(path => {
+                    const fromX = path.from.x * CELL_SIZE + CELL_SIZE / 2;
+                    const fromY = path.from.y * CELL_SIZE + CELL_SIZE / 2;
+                    const toX = path.to.x * CELL_SIZE + CELL_SIZE / 2;
+                    const toY = path.to.y * CELL_SIZE + CELL_SIZE / 2;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(fromX, fromY);
+                    ctx.lineTo(toX, toY);
+                    ctx.stroke();
+
+                    // Draw arrowhead
+                    const angle = Math.atan2(toY - fromY, toX - fromX);
+                    const headLength = CELL_SIZE * 0.3;
+                    ctx.beginPath();
+                    ctx.moveTo(toX, toY);
+                    ctx.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6), toY - headLength * Math.sin(angle - Math.PI / 6));
+                    ctx.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6), toY - headLength * Math.sin(angle + Math.PI / 6));
+                    ctx.closePath();
+                    ctx.fill();
+                });
+            };
+            
+            const getNeighbors = (node) => {
+                const neighbors = [];
+                const directions = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+                for (const [dx, dy] of directions) {
+                    const nx = node.x + dx;
+                    const ny = node.y + dy;
+                    if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE) {
+                        const neighbor = grid[ny][nx];
+                        // Check for one-way path blocks
+                        const isPathBlocked = oneWayPaths.some(path =>
+                            path.from.x === neighbor.x && path.from.y === neighbor.y &&
+                            path.to.x === node.x && path.to.y === node.y
+                        );
+                        if (!isPathBlocked) {
+                            neighbors.push(neighbor);
+                        }
+                    }
+                }
+                return neighbors;
+            };
+
+            const updateStatus = (message) => {
+                infoPanel.innerHTML = `<p class="mb-2">Status: ${message}</p>
+                <div class="legend">
+                    <div class="legend-item"><span style="font-size: 1.5rem;">⛏️</span>Miner</div>
+                    <div class="legend-item"><span style="font-size: 1.5rem;">💰</span>Gold</div>
+                    <div class="legend-item"><div class="legend-color" style="background-color:#2e2e2e;"></div>Wall</div>
+                    <div class="legend-item"><div class="legend-color" style="background-color:#e91e63;"></div>Resource (Cost: 1)</div>
+                    <div class="legend-item"><div class="legend-color" style="background-color:#7c4d2d;"></div>Mud (Cost: 50)</div>
+                    <div class="legend-item"><div class="legend-color" style="background-color:#42a5f5;"></div>Stream (Cost: 10)</div>
+                    <div class="legend-item"><div class="legend-color" style="background-color:#FFD700; width: 30px; border-radius: 0;"></div>One-Way Path</div>
+                    <div class="legend-item"><div class="legend-color" style="background-color: transparent; border-radius: 4px; border: 1px solid #c29b4e; background-image: linear-gradient(to right, #a8843e, #f2c75a);"></div>Visited</div>
+                    <div class="legend-item"><div class="legend-color" style="background-color:#d2b48c;"></div>Path</div>
+                </div>
+                `;
+            };
+
+            const getAlgorithmExplanation = (algorithm) => {
+                switch (algorithm) {
+                    case 'A*':
+                        return "A* is a smart algorithm that finds the most efficient path by considering both the distance traveled so far and a guess of the distance to the goal. It's often the best choice!";
+                    case 'Dijkstra':
+                        return "Dijkstra's algorithm finds the shortest path by exploring outward from the start. It guarantees the best path but can be slower than A* because it doesn't use a guess to prioritize nodes.";
+                    case 'GreedyBestFirst':
+                        return "Greedy Best-First is a fast but sometimes shortsighted algorithm. It always moves toward the node that seems closest to the gold, but this doesn't always lead to the shortest path.";
+                    case 'BFS':
+                        return "BFS explores the grid level by level, finding the shortest path in terms of the number of steps. It's simple but can be slow on large grids and doesn't consider terrain costs.";
+                    case 'DFS':
+                        return "DFS explores as far as possible along each path before backtracking. It's not guaranteed to find the shortest path, and can be very fast or very slow depending on the map.";
+                    case 'HillClimbing':
+                        return "Hill Climbing is a very simple and fast algorithm. It always moves to the neighbor that gets it closer to the gold. However, it can easily get stuck in a 'local optimum,' where no neighboring node is closer to the gold, and it fails to find the path.";
+                    default:
+                        return "";
+                    }
+            };
+            
+            const animatePath = (path, visitedNodes, algorithm) => {
+                let summaryMessage;
+                const algorithmExplanation = getAlgorithmExplanation(algorithm);
+                const visitedCount = visitedNodes.length;
+
+                if (path.length > 0) {
+                    const totalCost = endNode.g;
+                    const pathLength = path.length - 1; // Subtract 1 for the start node
+
+                    summaryMessage = `
+                        <h3 class="text-3xl font-bold">Expedition Successful!</h3>
+                        <p>We found the gold using the **${algorithm}** algorithm!</p>
+                        <p class="text-left mt-4 mb-2"><strong>Expedition Stats:</strong></p>
+                        <ul class="text-left list-disc list-inside space-y-1">
+                            <li>Cells Visited: <strong>${visitedCount}</strong></li>
+                            <li>Path Length: <strong>${pathLength}</strong> steps</li>
+                            <li>Total Cost: <strong>${totalCost}</strong> units</li>
+                        </ul>
+                        <p class="mt-4">${algorithmExplanation}</p>
+                    `;
+
+                    updateStatus(`Path found! Path length: ${path.length - 1} steps.`);
+                    let i = 0;
+
+                    const drawPathStep = () => {
+                         if (isPaused) {
+                            setTimeout(drawPathStep, PLAYER_ANIMATION_SPEED);
+                            return;
+                        }
+
+                        if (i < path.length) {
+                            const node = path[i];
+
+                            // Redraw the entire grid to clear the previous player position
+                            drawGrid();
+                            
+                            // Change the color of the path tile before the miner moves there
+                            if (node.type !== 'start' && node.type !== 'end') {
+                                drawNode(node, colors.path);
+                                node.type = 'path'; // Persist the path color
+                            }
+
+                            // Draw the miner at the new position
+                            drawMiner(node.x, node.y, '#f5e3b5');
+                            i++;
+                            setTimeout(drawPathStep, PLAYER_ANIMATION_SPEED);
+                        } else {
+                            isAnimating = false;
+                            clearBtn.disabled = false;
+                            startBtn.disabled = false;
+                            restartBtn.disabled = false;
+                            pauseBtn.disabled = true;
+                            showModal('Expedition Complete!', summaryMessage);
+                        }
+                    };
+                    drawPathStep();
+                } else {
+                    summaryMessage = `
+                        <h3 class="text-3xl font-bold">Expedition Failed!</h3>
+                        <p>No path could be found from the miner to the gold. This can happen if the gold is completely surrounded by impassable walls.</p>
+                        <p class="mt-4"><strong>Expedition Stats:</strong></p>
+                        <ul class="text-left list-disc list-inside space-y-1">
+                            <li>Cells Visited: <strong>${visitedCount}</strong></li>
+                            <li>Path Length: <strong>0</strong> steps</li>
+                            <li>Total Cost: <strong>N/A</strong></li>
+                        </ul>
+                        <p class="mt-4">${algorithmExplanation}</p>
+                    `;
+                    updateStatus('No path found!');
+                    isAnimating = false;
+                    clearBtn.disabled = false;
+                    startBtn.disabled = false;
+                    restartBtn.disabled = false;
+                    pauseBtn.disabled = true;
+                    showModal('Expedition Failed!', summaryMessage);
+                }
+            };
+
+            const animateSearch = (visitedNodes, path, algorithm) => {
+                const searchStartColor = '#a8843e'; // Darker gold/brown
+                const searchEndColor = '#f2c75a';   // Lighter yellow
+                let i = 0;
+
+                const drawSearchStep = () => {
+                     if (isPaused) {
+                        setTimeout(drawSearchStep, ANIMATION_SPEED);
+                        return;
+                    }
+                    if (i < visitedNodes.length) {
+                        const node = visitedNodes[i];
+                        if (node.type !== 'start' && node.type !== 'end') {
+                            // Calculate a color on the gradient based on the node's position in the visited array
+                            const colorFactor = i / visitedNodes.length;
+                            const animatedColor = interpolateColor(searchStartColor, searchEndColor, colorFactor);
+                            drawNode(node, animatedColor);
+                            node.type = 'visited'; // Persist the visited color
+                        }
+                        i++;
+                        setTimeout(drawSearchStep, ANIMATION_SPEED);
+                    } else {
+                        animatePath(path, visitedNodes, algorithm);
+                    }
+                };
+                drawSearchStep();
+            };
+
+            const bfs = () => {
+                const queue = [startNode];
+                const visitedNodesInOrder = [];
+                startNode.visited = true;
+                startNode.g = 0;
+
+                while (queue.length > 0) {
+                    const currentNode = queue.shift();
+                    visitedNodesInOrder.push(currentNode);
+
+                    if (currentNode === endNode) {
+                        return { visited: visitedNodesInOrder, path: reconstructPath(currentNode) };
+                    }
+
+                    const neighbors = getNeighbors(currentNode);
+                    for (const neighbor of neighbors) {
+                        if (!neighbor.visited && neighbor.type !== 'wall') {
+                            neighbor.visited = true;
+                            neighbor.previous = currentNode;
+                            neighbor.g = currentNode.g + neighbor.weight;
+                            queue.push(neighbor);
+                        }
+                    }
+                }
+                return { visited: visitedNodesInOrder, path: [] };
+            };
+
+            const dfs = () => {
+                const stack = [startNode];
+                const visitedNodesInOrder = [];
+                startNode.visited = true;
+                startNode.g = 0;
+
+                while (stack.length > 0) {
+                    const currentNode = stack.pop();
+                    visitedNodesInOrder.push(currentNode);
+
+                    if (currentNode === endNode) {
+                        return { visited: visitedNodesInOrder, path: reconstructPath(currentNode) };
+                    }
+
+                    const neighbors = getNeighbors(currentNode);
+                    // Shuffle neighbors to make path less predictable
+                    neighbors.sort(() => Math.random() - 0.5);
+                    for (const neighbor of neighbors) {
+                        if (!neighbor.visited && neighbor.type !== 'wall') {
+                            neighbor.visited = true;
+                            neighbor.previous = currentNode;
+                            neighbor.g = currentNode.g + neighbor.weight;
+                            stack.push(neighbor);
+                        }
+                    }
+                }
+                return { visited: visitedNodesInOrder, path: [] };
+            };
+
+            const dijkstra = () => {
+                const visitedNodesInOrder = [];
+                const unvisitedNodes = getAllNodes();
+                startNode.g = 0;
+
+                while (unvisitedNodes.length > 0) {
+                    // Sort the unvisited nodes by distance
+                    unvisitedNodes.sort((a, b) => a.g - b.g);
+                    const currentNode = unvisitedNodes.shift();
+
+                    if (currentNode.g === Infinity || currentNode.type === 'wall') {
+                        return { visited: visitedNodesInOrder, path: [] }; // No path
+                    }
+
+                    currentNode.visited = true;
+                    visitedNodesInOrder.push(currentNode);
+
+                    if (currentNode === endNode) {
+                        return { visited: visitedNodesInOrder, path: reconstructPath(currentNode) };
+                    }
+
+                    const neighbors = getNeighbors(currentNode);
+                    for (const neighbor of neighbors) {
+                        if (!neighbor.visited) {
+                            const newDist = currentNode.g + neighbor.weight;
+                            if (newDist < neighbor.g) {
+                                neighbor.g = newDist;
+                                neighbor.previous = currentNode;
+                            }
+                        }
+                    }
+                }
+                return { visited: visitedNodesInOrder, path: [] };
+            };
+
+            const aStar = () => {
+                const openSet = [startNode];
+                const visitedNodesInOrder = [];
+                startNode.g = 0;
+                startNode.h = heuristic(startNode, endNode);
+                startNode.f = startNode.g + startNode.h;
+
+                while (openSet.length > 0) {
+                    openSet.sort((a, b) => a.f - b.f);
+                    const currentNode = openSet.shift();
+                    visitedNodesInOrder.push(currentNode);
+                    currentNode.visited = true;
+
+                    if (currentNode === endNode) {
+                        return { visited: visitedNodesInOrder, path: reconstructPath(currentNode) };
+                    }
+
+                    const neighbors = getNeighbors(currentNode);
+                    for (const neighbor of neighbors) {
+                        if (neighbor.type === 'wall') continue;
+
+                        const tentativeG = currentNode.g + neighbor.weight;
+
+                        if (tentativeG < neighbor.g) {
+                            neighbor.previous = currentNode;
+                            neighbor.g = tentativeG;
+                            neighbor.h = heuristic(neighbor, endNode);
+                            neighbor.f = neighbor.g + neighbor.h;
+
+                            if (!openSet.includes(neighbor)) {
+                                openSet.push(neighbor);
+                            }
+                        }
+                    }
+                }
+                return { visited: visitedNodesInOrder, path: [] };
+            };
+
+            const greedyBestFirst = () => {
+                const openSet = [startNode];
+                const visitedNodesInOrder = [];
+                startNode.h = heuristic(startNode, endNode);
+                startNode.g = 0;
+
+                while (openSet.length > 0) {
+                    openSet.sort((a, b) => a.h - b.h);
+                    const currentNode = openSet.shift();
+                    visitedNodesInOrder.push(currentNode);
+                    currentNode.visited = true;
+
+                    if (currentNode === endNode) {
+                        return { visited: visitedNodesInOrder, path: reconstructPath(currentNode) };
+                    }
+
+                    const neighbors = getNeighbors(currentNode);
+                    for (const neighbor of neighbors) {
+                        if (neighbor.type === 'wall' || neighbor.visited) continue;
+                        neighbor.previous = currentNode;
+                        neighbor.g = currentNode.g + neighbor.weight;
+                        neighbor.h = heuristic(neighbor, endNode);
+                        neighbor.visited = true;
+                        openSet.push(neighbor);
+                    }
+                }
+                return { visited: visitedNodesInOrder, path: [] };
+            };
+
+            const hillClimbing = () => {
+                let currentNode = startNode;
+                const visitedNodesInOrder = [currentNode];
+                currentNode.g = 0;
+
+                while (currentNode !== endNode) {
+                    let bestNeighbor = null;
+                    let bestHeuristic = Infinity;
+                    const neighbors = getNeighbors(currentNode);
+
+                    for (const neighbor of neighbors) {
+                        if (neighbor.type === 'wall' || neighbor.visited) continue;
+                        const h = heuristic(neighbor, endNode);
+                        if (h < bestHeuristic) {
+                            bestHeuristic = h;
+                            bestNeighbor = neighbor;
+                        }
+                    }
+
+                    if (bestNeighbor) {
+                        bestNeighbor.previous = currentNode;
+                        bestNeighbor.visited = true;
+                        bestNeighbor.g = currentNode.g + bestNeighbor.weight;
+                        currentNode = bestNeighbor;
+                        visitedNodesInOrder.push(currentNode);
+                    } else {
+                        // Stuck in a local minimum
+                        updateStatus('Stuck in a local minimum. No path found.');
+                        return { visited: visitedNodesInOrder, path: [] };
+                    }
+                }
+
+                return { visited: visitedNodesInOrder, path: reconstructPath(currentNode) };
+            };
+
+            const reconstructPath = (node) => {
+                const path = [];
+                let currentNode = node;
+                while (currentNode) {
+                    path.unshift(currentNode);
+                    currentNode = currentNode.previous;
+                }
+                return path;
+            };
+
+            const getAllNodes = () => {
+                const nodes = [];
+                for (let y = 0; y < GRID_SIZE; y++) {
+                    for (let x = 0; x < GRID_SIZE; x++) {
+                        nodes.push(grid[y][x]);
+                    }
+                }
+                return nodes;
+            };
+            
+            const getGridCoords = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                let clientX, clientY;
+                if (e.touches) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+                const x = Math.floor(((clientX - rect.left) / rect.width) * GRID_SIZE);
+                const y = Math.floor(((clientY - rect.top) / rect.height) * GRID_SIZE);
+                return { x, y };
+            };
+
+            const handleDrawing = (x, y) => {
+                if (x < 0 || x >= GRID_SIZE || y < 0 || y >= GRID_SIZE || isAnimating) return;
+
+                const node = grid[y][x];
+
+                // Check if the node is already part of a one-way path, if so, remove it
+                oneWayPaths = oneWayPaths.filter(path =>
+                    !(path.from.x === x && path.from.y === y) &&
+                    !(path.to.x === x && path.to.y === y)
+                );
+
+                switch (currentMode) {
+                    case 'start':
+                        if (startNode) {
+                            startNode.type = 'empty';
+                            drawNode(startNode);
+                        }
+                        node.type = 'start';
+                        node.weight = 5;
+                        startNode = node;
+                        break;
+                    case 'end':
+                        if (endNode) {
+                            endNode.type = 'empty';
+                            drawNode(endNode);
+                        }
+                        node.type = 'end';
+                        endNode = node;
+                        break;
+                    case 'wall':
+                        if (node.type !== 'start' && node.type !== 'end') {
+                            node.type = 'wall';
+                            node.weight = 5;
+                        }
+                        break;
+                    case 'resource':
+                        if (node.type !== 'start' && node.type !== 'end') {
+                            node.type = 'resource';
+                            node.weight = 1;
+                        }
+                        break;
+                    case 'mud':
+                        if (node.type !== 'start' && node.type !== 'end') {
+                            node.type = 'mud';
+                            node.weight = 50;
+                        }
+                        break;
+                    case 'stream':
+                        if (node.type !== 'start' && node.type !== 'end') {
+                            node.type = 'stream';
+                            node.weight = 10;
+                        }
+                        break;
+                }
+                drawNode(node);
+            };
+            
+            const handleOneWayPathClick = (x, y) => {
+                if (isAnimating) return;
+                const node = grid[y][x];
+
+                if (!oneWayStartNode) {
+                    oneWayStartNode = node;
+                    updateStatus(`One-Way Path: Select a second adjacent cell.`);
+                } else {
+                    const isAdjacent = Math.abs(oneWayStartNode.x - x) + Math.abs(oneWayStartNode.y - y) === 1;
+                    if (isAdjacent) {
+                         const pathExists = oneWayPaths.some(path =>
+                            (path.from.x === oneWayStartNode.x && path.from.y === oneWayStartNode.y && path.to.x === x && path.to.y === y)
+                         );
+                        if(pathExists) {
+                            // Remove the path if it already exists
+                            oneWayPaths = oneWayPaths.filter(path =>
+                                !(path.from.x === oneWayStartNode.x && path.from.y === oneWayStartNode.y && path.to.x === x && path.to.y === y)
+                            );
+                            updateStatus(`One-Way Path removed.`);
+                        } else {
+                            // Add the new path
+                            oneWayPaths.push({ from: { x: oneWayStartNode.x, y: oneWayStartNode.y }, to: { x, y } });
+                            updateStatus(`One-Way Path added from (${oneWayStartNode.x}, ${oneWayStartNode.y}) to (${x}, ${y}).`);
+                        }
+                        oneWayStartNode = null;
+                        drawGrid();
+                    } else {
+                        updateStatus('Please select an adjacent cell. Selection reset.');
+                        oneWayStartNode = null;
+                    }
+                }
+            };
+
+            canvas.addEventListener('mousedown', (e) => {
+                const { x, y } = getGridCoords(e);
+                if (currentMode === 'oneway') {
+                    handleOneWayPathClick(x, y);
+                } else if (['wall', 'resource', 'mud', 'stream'].includes(currentMode)) {
+                    isDrawingWall = true;
+                    handleDrawing(x, y);
+                } else {
+                    handleDrawing(x, y);
+                }
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (isDrawingWall) {
+                    handleDrawing(getGridCoords(e).x, getGridCoords(e).y);
+                }
+            });
+
+            canvas.addEventListener('mouseup', () => {
+                isDrawingWall = false;
+            });
+
+            canvas.addEventListener('mouseleave', () => {
+                isDrawingWall = false;
+            });
+            
+            // Touch events for mobile
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const { x, y } = getGridCoords(e);
+                if (currentMode === 'oneway') {
+                     handleOneWayPathClick(x, y);
+                } else if (['wall', 'resource', 'mud', 'stream'].includes(currentMode)) {
+                    isDrawingWall = true;
+                    handleDrawing(x, y);
+                } else {
+                    handleDrawing(x, y);
+                }
+            });
+
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                if (isDrawingWall) {
+                    handleDrawing(getGridCoords(e).x, getGridCoords(e).y);
+                }
+            });
+
+            canvas.addEventListener('touchend', () => {
+                isDrawingWall = false;
+            });
+
+            startBtn.addEventListener('click', () => {
+                if (isAnimating) return;
+
+                if (!startNode || !endNode) {
+                    showModal('Missing Nodes', 'Please place both a start point (miner) and an end point (gold) before visualizing.');
+                    return;
+                }
+
+                isAnimating = true;
+                clearBtn.disabled = true;
+                startBtn.disabled = true;
+                restartBtn.disabled = true;
+                pauseBtn.disabled = false;
+
+                // Reset grid for a new run
+                getAllNodes().forEach(node => {
+                    node.f = Infinity;
+                    node.g = Infinity;
+                    node.h = 0;
+                    node.previous = null;
+                    node.visited = false;
+                    if (node.type === 'visited' || node.type === 'path') {
+                        node.type = 'empty';
+                    }
+                });
+                drawGrid();
+
+                const algorithm = algorithmSelect.value;
+                updateStatus(`Visualizing ${algorithm}...`);
+
+                let result;
+                switch (algorithm) {
+                    case 'BFS':
+                        result = bfs();
+                        break;
+                    case 'DFS':
+                        result = dfs();
+                        break;
+                    case 'Dijkstra':
+                        result = dijkstra();
+                        break;
+                    case 'A*':
+                        result = aStar();
+                        break;
+                    case 'GreedyBestFirst':
+                        result = greedyBestFirst();
+                        break;
+                    case 'HillClimbing':
+                        result = hillClimbing();
+                        break;
+                }
+                animateSearch(result.visited, result.path, algorithm);
+            });
+
+            restartBtn.addEventListener('click', () => {
+                if (isAnimating) {
+                    isAnimating = false;
+                }
+                const oldMap = mapSelect.value;
+                initializeGrid();
+                if (oldMap !== 'custom' && premadeLayouts[oldMap]) {
+                    premadeLayouts[oldMap]();
+                }
+                
+                startBtn.disabled = false;
+                restartBtn.disabled = false;
+                clearBtn.disabled = false;
+                pauseBtn.disabled = true;
+            });
+
+            clearBtn.addEventListener('click', () => {
+                if (isAnimating) return;
+                initializeGrid();
+                clearBtn.disabled = false;
+                startBtn.disabled = false;
+                restartBtn.disabled = false;
+                pauseBtn.disabled = true;
+            });
+
+            pauseBtn.addEventListener('click', () => {
+                if (!isAnimating) return;
+                isPaused = !isPaused;
+                pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+            });
+
+            modeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    if (isAnimating) return;
+                    modeButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    currentMode = button.dataset.mode;
+                    updateStatus(`Ready to place: ${currentMode}`);
+                    oneWayStartNode = null; // Reset one-way path state
+                });
+            });
+
+            gridSizeSelect.addEventListener('change', (e) => {
+                if (isAnimating) return;
+                GRID_SIZE = parseInt(e.target.value);
+                initializeGrid();
+                mapSelect.value = 'custom';
+            });
+
+            const premadeLayouts = {
+                 prospectors_peak: () => {
+                    const size = 20;
+                    GRID_SIZE = size;
+                    gridSizeSelect.value = size;
+                    initializeGrid();
+                    startNode = grid[18][10];
+                    startNode.type = 'start';
+                    endNode = grid[1][10];
+                    endNode.type = 'end';
+
+                    // Create a winding path up the mountain
+                    for (let i = 2; i < 18; i++) {
+                        grid[i][2].type = 'wall'; grid[i][2].weight = 5;
+                        grid[i][17].type = 'wall'; grid[i][17].weight = 5;
+                    }
+                    for (let i = 3; i < 17; i++) {
+                        grid[i][3].type = 'wall'; grid[i][3].weight = 5;
+                        grid[i][16].type = 'wall'; grid[i][16].weight = 5;
+                    }
+
+                    // Create switchbacks
+                    for (let i = 4; i < 16; i++) {
+                         if (i % 2 === 0) {
+                            grid[i][4].type = 'wall'; grid[i][4].weight = 5;
+                            grid[i][5].type = 'wall'; grid[i][5].weight = 5;
+                         } else {
+                            grid[i][14].type = 'wall'; grid[i][14].weight = 5;
+                            grid[i][15].type = 'wall'; grid[i][15].weight = 5;
+                         }
+                    }
+
+                    // Add streams and mud
+                    for (let i = 0; i < 20; i++) {
+                        grid[10][i].type = 'stream'; grid[10][i].weight = 10;
+                    }
+                    grid[12][11].type = 'mud'; grid[12][11].weight = 50;
+                    grid[12][12].type = 'mud'; grid[12][12].weight = 50;
+                    grid[17][8].type = 'mud'; grid[17][8].weight = 50;
+                    
+                    // Add some resources
+                    grid[15][18].type = 'resource'; grid[15][18].weight = 1;
+                    grid[5][1].type = 'resource'; grid[5][1].weight = 1;
+                    
+                    drawGrid();
+                    updateStatus('Map Loaded: Prospector\'s Peak');
+                },
+                north_star: () => {
+                    const size = 40;
+                    GRID_SIZE = size;
+                    gridSizeSelect.value = size;
+                    initializeGrid();
+                    startNode = grid[5][5];
+                    startNode.type = 'start';
+                    endNode = grid[35][35];
+                    endNode.type = 'end';
+                    
+                    // Create a star pattern of walls
+                    for (let i = 10; i < 30; i++) {
+                        grid[i][20].type = 'wall';
+                        grid[i][20].weight = 5;
+                        grid[20][i].type = 'wall';
+                        grid[20][i].weight = 5;
+                    }
+                    for (let i = 15; i < 25; i++) {
+                        grid[10][i].type = 'wall';
+                        grid[10][i].weight = 5;
+                        grid[30][i].type = 'wall';
+                        grid[30][i].weight = 5;
+                    }
+                    for (let i = 15; i < 25; i++) {
+                        grid[i][10].type = 'wall';
+                        grid[i][10].weight = 5;
+                        grid[i][30].type = 'wall';
+                        grid[i][30].weight = 5;
+                    }
+
+                    // Add some resources and mud
+                    grid[12][20].type = 'resource'; grid[12][20].weight = 1;
+                    grid[28][20].type = 'resource'; grid[28][20].weight = 1;
+                    grid[20][12].type = 'resource'; grid[20][12].weight = 1;
+                    grid[20][28].type = 'resource'; grid[20][28].weight = 1;
+
+                    grid[22][22].type = 'mud'; grid[22][22].weight = 50;
+                    grid[18][18].type = 'mud'; grid[18][18].weight = 50;
+                    grid[18][22].type = 'mud'; grid[18][22].weight = 50;
+                    grid[22][18].type = 'mud'; grid[22][18].weight = 50;
+                    
+                    // Add a one-way path to create a shortcut
+                    oneWayPaths.push({ from: { x: 15, y: 19 }, to: { x: 15, y: 20 }});
+                    oneWayPaths.push({ from: { x: 25, y: 20 }, to: { x: 25, y: 19 }});
+
+                    drawGrid();
+                    updateStatus('Map Loaded: The North Star Prospect');
+                },
+
+                whispering_canyon: () => {
+                    const size = 40;
+                    GRID_SIZE = size;
+                    gridSizeSelect.value = size;
+                    initializeGrid();
+                    startNode = grid[38][1];
+                    startNode.type = 'start';
+                    endNode = grid[1][38];
+                    endNode.type = 'end';
+
+                    // Create a winding canyon with walls
+                    for (let i = 5; i < 35; i++) {
+                        grid[5][i].type = 'wall'; grid[5][i].weight = 5;
+                        grid[10][i].type = 'wall'; grid[10][i].weight = 5;
+                        grid[20][i].type = 'wall'; grid[20][i].weight = 5;
+                        grid[30][i].type = 'wall'; grid[30][i].weight = 5;
+                    }
+
+                    for (let i = 5; i < 35; i++) {
+                        grid[i][5].type = 'wall'; grid[i][5].weight = 5;
+                        grid[i][15].type = 'wall'; grid[i][15].weight = 5;
+                        grid[i][25].type = 'wall'; grid[i][25].weight = 5;
+                        grid[i][35].type = 'wall'; grid[i][35].weight = 5;
+                    }
+
+                    // Open a path
+                    grid[5][12].type = 'empty';
+                    grid[10][12].type = 'empty';
+                    grid[15][25].type = 'empty';
+                    grid[20][25].type = 'empty';
+                    grid[25][15].type = 'empty';
+                    grid[30][15].type = 'empty';
+                    
+                    // Add a winding stream through the canyon
+                    for(let i=10; i<30; i++) {
+                        grid[i][12].type = 'stream'; grid[i][12].weight = 10;
+                    }
+                    for(let i=12; i<25; i++) {
+                        grid[29][i].type = 'stream'; grid[29][i].weight = 10;
+                    }
+
+                    // Add a one-way shortcut
+                    oneWayPaths.push({ from: { x: 20, y: 14 }, to: { x: 20, y: 15 }});
+
+                    // Add some resources and a mud trap
+                    grid[18][18].type = 'resource'; grid[18][18].weight = 1;
+                    grid[28][28].type = 'resource'; grid[28][28].weight = 1;
+                    grid[22][22].type = 'mud'; grid[22][22].weight = 50;
+                    
+                    drawGrid();
+                    updateStatus('Map Loaded: Whispering Canyon Mine');
+                },
+
+                midas_touch: () => {
+                    const size = 40;
+                    GRID_SIZE = size;
+                    gridSizeSelect.value = size;
+                    initializeGrid();
+                    startNode = grid[5][5];
+                    startNode.type = 'start';
+                    endNode = grid[35][35];
+                    endNode.type = 'end';
+
+                    // Create a large, resource-rich area
+                    for (let y = 10; y < 30; y++) {
+                        for (let x = 10; x < 30; x++) {
+                             grid[y][x].type = 'resource';
+                             grid[y][x].weight = 1;
+                        }
+                    }
+
+                    // Add some walls to block a direct path
+                    for (let i = 5; i < 35; i++) {
+                        grid[i][20].type = 'wall';
+                        grid[i][20].weight = 5;
+                    }
+                    grid[19][20].type = 'empty'; // Create a small opening
+                    grid[20][20].type = 'empty';
+                    grid[21][20].type = 'empty';
+                    
+                    // Add a stream that crosses the map
+                    for (let i = 0; i < 40; i++) {
+                        grid[15][i].type = 'stream';
+                        grid[15][i].weight = 10;
+                        grid[25][i].type = 'stream';
+                        grid[25][i].weight = 10;
+                    }
+
+                    // Add one-way paths to guide the user
+                    oneWayPaths.push({ from: { x: 15, y: 15 }, to: { x: 15, y: 14 }});
+                    oneWayPaths.push({ from: { x: 25, y: 25 }, to: { x: 25, y: 26 }});
+
+
+                    drawGrid();
+                    updateStatus('Map Loaded: Midas\'s Touch');
+                },
+
+                echoing_gulch: () => {
+                    const size = 60;
+                    GRID_SIZE = size;
+                    gridSizeSelect.value = size;
+                    initializeGrid();
+                    startNode = grid[5][5];
+                    startNode.type = 'start';
+                    endNode = grid[55][55];
+                    endNode.type = 'end';
+                    
+                    // Add a large mud pit in the center
+                    for (let y = 20; y < 40; y++) {
+                        for (let x = 20; x < 40; x++) {
+                            grid[y][x].type = 'mud';
+                            grid[y][x].weight = 50;
+                        }
+                    }
+
+                    // Create a large wall section to the side
+                    for (let i = 10; i < 50; i++) {
+                        grid[i][15].type = 'wall';
+                        grid[i][15].weight = 5;
+                    }
+                    
+                    // Add some streams and rocky ground
+                    for (let y = 10; y < 20; y++) {
+                         grid[y][45].type = 'stream';
+                         grid[y][45].weight = 10;
+                    }
+
+                    // Add a one-way path into a small isolated area
+                    oneWayPaths.push({ from: { x: 16, y: 20 }, to: { x: 16, y: 21 } });
+                    grid[17][21].type = 'wall';
+                    grid[16][21].type = 'mud';
+
+                    drawGrid();
+                    updateStatus('Map Loaded: Echoing Gulch');
+                },
+
+                custom: () => {
+                    GRID_SIZE = parseInt(gridSizeSelect.value);
+                    initializeGrid();
+                    updateStatus('Custom map loaded. Use the miner\'s kit to create your own map!');
+                }
+            };
+            
+            mapSelect.addEventListener('change', (e) => {
+                if (isAnimating) return;
+                premadeLayouts[e.target.value]();
+            });
+
+            const showIntroModal = () => {
+                const introMessage = `
+                    <p>Welcome, Miner! Your goal is to find the path from your location (⛏️) to the gold (💰). Here's a quick guide to the terrain:</p>
+                    <ul>
+                        <li>A **Normal Tile** has a default cost of 5.</li>
+                        <li>**Resources** (pink) have a low cost of 1, making them a great path to follow.</li>
+                        <li>**Treacherous Mud** (brown) has a high cost of 50, slowing down your progress significantly.</li>
+                        <li>**Walls** (dark grey) are impassable and have no cost.</li>
+                        <li>**Streams** (blue) are wet and a bit slow, with a cost of 10.</li>
+                        <li>**One-Way Paths** are single-direction passages. Click on a cell and then an adjacent cell to create a one-way connection.</li>
+                    </ul>
+                    <p>Use the Miner's Kit to place these terrain types, then select an algorithm to see how it finds the gold!</p>
+                `;
+                showModal('Gold Digger', introMessage);
+            };
+
+            window.addEventListener('load', () => {
+                updateCanvasSize();
+                premadeLayouts.custom(); // Load custom map on start
+                showIntroModal();
+            });
+
+            window.addEventListener('resize', () => {
+                 updateCanvasSize();
+                 drawGrid();
+            });
+        });
+    </script>
+</body>
+</html>
