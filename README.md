@@ -4,7 +4,7 @@ This project is an interactive 2D web application that visualizes different path
 ## Features
 Algorithm Visualization</u>: Watch as popular pathfinding algorithms like A*, Dijkstra's, Breadth-First Search (BFS), and Depth-First Search (DFS) find the optimal path in real-time.
 
-<u>*Customizable Grid</u>: Create and edit maps by drawing walls, adding obstacles, and setting different terrain costs.
+<u>Customizable Grid</u>: Create and edit maps by drawing walls, adding obstacles, and setting different terrain costs.
 
 <u>*Dynamic Grid Sizing</u>: The grid automatically adjusts to different screen sizes, ensuring a seamless experience on any device.
 
